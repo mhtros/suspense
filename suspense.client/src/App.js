@@ -281,7 +281,7 @@ function App() {
       <span id="forkongithub">
         <a
           target="_blank"
-          href=""
+          href="https://github.com/mhtros/suspense"
           rel="noreferrer"
         >
           Fork me on GitHub
