@@ -1,0 +1,41 @@
+## Building and Running Your Application
+
+### Using Docker
+
+To run the application using Docker, follow these steps:
+
+1. **Download Docker:** If Docker isn't installed, get it from [Docker's official website](https://www.docker.com/).
+
+2. **Start the Application:** Run the following command in your terminal:
+   ```bash
+   # First change directories to the location of your Docker Compose file.
+   docker compose -f compose-production.yaml up --build
+   ```
+
+The application will be available at [http://localhost:5114](http://localhost:5114).
+
+**Note:** The production `compose.yaml` file contains a password setting for the Redis cache. Modify this password based
+on your specific needs or preferences.
+
+**Without Docker (Manual Setup)**
+
+- **Install .NET 8:**  
+  Ensure you have .NET 8 installed. Download it from the [.NET downloads page](https://dotnet.microsoft.com/download).
+
+- **Download Node.js:**  
+  If not already installed, download Node.js from the [Node.js official website](https://nodejs.org/).
+
+- **Start the Server:**  
+  After setting up .NET 8, open the solution using your preferred IDE and launch the server. Alternatively, you can run
+  the following command:
+  ```bash
+  dotnet run
+  ```
+  The server will be available at http://localhost:5114.
+
+- **Start the Client:**  
+  Open the client and Run the following command in your terminal:
+  ```bash
+  npm start
+  ```
+  The client will be available at http://localhost:3000.

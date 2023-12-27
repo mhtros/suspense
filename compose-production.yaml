@@ -1,0 +1,26 @@
+services:
+  redis-production:
+    image: redis/redis-stack-server:6.2.6-v10
+    ports:
+      - 6379:6379
+    command: [ "redis-server", "--requirepass", "ADD_YOUR_PASSWORD" ]
+    restart: always
+
+  server-production:
+    build:
+      context: .
+      dockerfile: Dockerfile-production
+      target: final
+      args:
+        - REACT_APP_SERVER_BASE_URI=http://localhost:5114
+    ports:
+      - 5114:5114
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - REDIS_HOST=redis-production
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=ADD_YOUR_PASSWORD
+      - ASPNETCORE_HTTP_PORTS=5114
+    restart: always
+    depends_on:
+      - redis-production

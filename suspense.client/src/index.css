@@ -1,0 +1,37 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.card-image {
+  width: 90px;
+  height: 140px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin: 0;
+  transition: margin 0.2s ease-in-out;
+}
+
+.card-image:hover {
+  cursor: pointer;
+  margin-bottom: -5px;
+  animation: card--hover 300ms ease-out 1 forwards;
+}
+
+@keyframes card--hover {
+  from {
+    border-color: #ddd;
+  }
+  to {
+    border-color: lightskyblue;
+  }
+}
