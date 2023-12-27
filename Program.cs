@@ -26,10 +26,10 @@ builder.Services.AddSingleton<IGameManagerFactory, GameManagerFactory>();
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    var hostname = Environment.GetEnvironmentVariable("REDIS_HOST");
+    var host = Environment.GetEnvironmentVariable("REDIS_HOST");
     var password = Environment.GetEnvironmentVariable("REDIS_PASSWORD");
 
-    options.Configuration = $"{hostname},password={password}";
+    options.Configuration = builder.Environment.IsProduction() ? $"{host},password={password}" : "localhost:6379";
     options.InstanceName = "suspense.";
 });
 
