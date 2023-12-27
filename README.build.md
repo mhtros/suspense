@@ -4,9 +4,10 @@
 
 To run the application using Docker, follow these steps:
 
-1. **Download Docker:** If Docker isn't installed, get it from [Docker's official website](https://www.docker.com/).
+- **Download Docker:** If Docker isn't installed, get it from [Docker's official website](https://www.docker.com/).
 
-2. **Start the Application:** Run the following command in your terminal:
+
+- **Start the Application:** Run the following command in your terminal:
    ```bash
    # First change directories to the location of your Docker Compose file.
    docker compose -f compose-production.yaml up --build
@@ -19,11 +20,25 @@ on your specific needs or preferences.
 
 **Without Docker (Manual Setup)**
 
+- Install `redis-stack-server` or `redis-stack` server
+  from [Redis official website](https://redis.io/docs/install/install-stack/).\
+  If you want to use Docker for hosting the Redis server (ironically, this is the easiest solution, even for a setup
+  without
+  Docker), run the following command to spin up a container:
+  ```
+  docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:6.2.6-v10
+  ```
+
+  **Note:** With the above command, you can view the Redis states saved on the server using http://localhost:8001.
+
+
 - **Install .NET 8:**  
   Ensure you have .NET 8 installed. Download it from the [.NET downloads page](https://dotnet.microsoft.com/download).
 
+
 - **Download Node.js:**  
   If not already installed, download Node.js from the [Node.js official website](https://nodejs.org/).
+
 
 - **Start the Server:**  
   After setting up .NET 8, open the solution using your preferred IDE and launch the server. Alternatively, you can run
@@ -32,6 +47,7 @@ on your specific needs or preferences.
   dotnet run
   ```
   The server will be available at http://localhost:5114.
+
 
 - **Start the Client:**  
   Open the client and Run the following command in your terminal:

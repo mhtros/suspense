@@ -94,7 +94,7 @@ points each. Aces (A) worth 11 points.
 
 ### Getting Started
 
-To Run the game see [Building and Running Your Application](README.Docker.md) for more information.
+To Run the game see [Building and Running Your Application](README.build.md) for more information.
 
 ### Technologies Used
 
