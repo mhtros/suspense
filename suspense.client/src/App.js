@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   apiVersion,
   cards,
@@ -14,7 +14,7 @@ import {
   serverBaseUri,
   suit,
 } from "./helpers/constant-values";
-import {customFetch, guid, handleError} from "./helpers/services";
+import { customFetch, guid, handleError } from "./helpers/services";
 
 const btnAction = {
   createPlayer: 1,
@@ -107,7 +107,7 @@ function App() {
 
           connection.on("PlayerDataUpdated", (playerData) => {
             setGame((prevGame) => {
-              const newGame = {...prevGame};
+              const newGame = { ...prevGame };
               newGame.playersData[playerRef.current.id] = playerData;
               return newGame;
             });
@@ -277,399 +277,436 @@ function App() {
   // === JSX ===
 
   return (
-    <div style={{ padding: "4px" }}>
-      {/* DEBUGGING */}
-      {DEBUGGING && (
-        <div>
-          <div style={{ display: "flex", gap: "2rem" }}>
-            <div>
-              <h3>Player</h3>
-              <pre>{JSON.stringify(player, null, 2)}</pre>
+    <div style={{ display: "flex", flexFlow: "column", height: "100vh" }}>
+      <span id="forkongithub">
+        <a
+          target="_blank"
+          href=""
+          rel="noreferrer"
+        >
+          Fork me on GitHub
+        </a>
+      </span>
+      <header
+        style={{
+          backgroundColor: "#333",
+          color: "white",
+          textAlign: "center",
+          fontSize: 30,
+          padding: "5px",
+          marginBottom: "1rem",
+        }}
+      >
+        Lets Play Suspense!
+      </header>
+      <div style={{ padding: "4px 4px 0 4px", flexGrow: 1 }}>
+        {/* DEBUGGING */}
+        {DEBUGGING && (
+          <div>
+            <div style={{ display: "flex", gap: "2rem" }}>
+              <div>
+                <h3>Player</h3>
+                <pre>{JSON.stringify(player, null, 2)}</pre>
+              </div>
+              <div>
+                <h3>Game</h3>
+                <pre>{JSON.stringify(game, null, 2)}</pre>
+              </div>
             </div>
-            <div>
-              <h3>Game</h3>
-              <pre>{JSON.stringify(game, null, 2)}</pre>
-            </div>
-          </div>
-          <hr />
-        </div>
-      )}
-
-      <h1>Suspense Card Game!</h1>
-
-      {/* NAME */}
-      <label htmlFor="name">Name: </label>
-
-      {/* If name is not set that means the players are not created on the server yet so show the input */}
-      {playerLoading === false && player.id === "" && (
-        <input
-          id="name"
-          style={{ marginRight: "4px" }}
-          value={player.name}
-          onKeyDown={(e) => handleInputKeyDown(e, btnAction.createPlayer)}
-          onChange={(i) =>
-            setPlayer((prevState) => ({
-              ...prevState,
-              name: i.target.value,
-            }))
-          }
-        />
-      )}
-
-      {/* else the players have been created on the server so show the name and the set button */}
-      {playerLoading === false && player.id !== "" && (
-        <span style={{ marginRight: "4px" }}>{player.name}</span>
-      )}
-
-      {playerLoading === true && <span>Loading...</span>}
-
-      {playerLoading === false && player.id === "" && (
-        <button onClick={createPlayer}>Set</button>
-      )}
-
-      {/* If server has created the player but the game is not yet created then show available actions join/create game */}
-      {player.id !== "" && game.id === "" && (
-        <>
-          <div style={{ marginTop: "1rem" }}>
-            <label htmlFor="joinGame">Join/Create: </label>
-            <input
-              id="joinGame"
-              type="checkbox"
-              value={toggleJoinCreate}
-              onChange={() => setToggleJoinCreate((prev) => !prev)}
-            />
-          </div>
-
-          {/* CREATE GAME */}
-          {!toggleJoinCreate && (
-            <>
-              {/* Loading */}
-              {gameLoading === true && <span>Loading...</span>}
-              {/* Display */}
-              {gameLoading === false && (
-                <>
-                  <label htmlFor="noOfTurns">Numbers of Turns: </label>
-                  <select
-                    id="noOfTurns"
-                    onChange={(i) => setGameTurns(i.target.value)}
-                    defaultValue={defaultTurns}
-                  >
-                    {[1, 2, 3, 5, 10, 15, 20].map((no, index) => {
-                      return <option key={index}>{no}</option>;
-                    })}
-                  </select>
-                  <button style={{ marginLeft: "1rem" }} onClick={createGame}>
-                    Create Game
-                  </button>
-                </>
-              )}
-            </>
-          )}
-
-          {/* JOIN GAME */}
-          {toggleJoinCreate && (
-            <>
-              {/* Loading */}
-              {gameLoading === true && <span>Loading...</span>}
-              {/* Display */}
-              {gameLoading === false && (
-                <>
-                  <input
-                    value={gameToJoin}
-                    style={{
-                      marginRight: "4px",
-                      minWidth: "270px",
-                      height: "1.3rem",
-                    }}
-                    onKeyDown={(e) => handleInputKeyDown(e, btnAction.joinGame)}
-                    onChange={(input) => {
-                      setGameToJoin(input.target.value);
-                    }}
-                  />
-                  <button style={{ height: "1.6rem" }} onClick={joinGame}>
-                    Join Game
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {!!game.id && (
-        <div style={{ marginBottom: "1rem" }}>
-          Game: {game.id}{" "}
-          <button onClick={() => navigator.clipboard.writeText(game.id)}>
-            Copy
-          </button>
-        </div>
-      )}
-
-      {/* START GAME */}
-      {!!player?.id &&
-        !!game?.playersData &&
-        !!game?.id &&
-        game?.playersData[`${player?.id}`]?.isLeader && (
-          <div style={{ margin: "1rem 0" }}>
-            {game.currentTurn === 0 && (
-              <button
-                disabled={Object.keys(game.playersData).length <= 1}
-                onClick={startGame}
-              >
-                Start Game
-              </button>
-            )}
-            {Object.keys(game.playersData).length <= 1 && (
-              <span style={{ color: "#aaa", marginLeft: "4px" }}>
-                {" "}
-                awaiting players to join...
-              </span>
-            )}
+            <hr />
           </div>
         )}
 
-      {/* GAME STATISTICS AND ACTIONS */}
-      {!!game.playedCards && game.playedCards.length > 0 && (
-        <div>
-          <div style={{ marginBottom: "1rem" }}>
-            {/* Turns and Time */}
-            <div>
-              Turn: {game.currentTurn} of {game.turnLimit}
-              {countdown > 0 && isCountdownActive && (
-                <>
-                  ( Time:{" "}
-                  <span
-                    style={{
-                      color: `${countdown <= 10 ? "red" : "green"}`,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {countdown}
-                  </span>
-                  )
-                </>
-              )}
-            </div>
-            {/* Current player */}
-            <div>
-              CurrentPlayer:{" "}
-              <span style={{ color: "blue" }}>
-                {
-                  game?.playersData[
-                    Object.keys(game?.playersData).find(
-                      (key) => game?.playersData[key]?.isHisTurn === true
-                    )
-                  ]?.player?.name
-                }
-              </span>
-            </div>
-          </div>
+        {/* NAME */}
+        <label htmlFor="name">Playername: </label>
 
-          <div style={{ display: "flex", gap: "1.5rem", marginLeft: "10px" }}>
-            <div style={{ width: "max-content", marginBottom: "1rem" }}>
-              <div style={{ textAlign: "center" }}>At Table</div>
-              <img
-                alt="Current card on table"
-                className="card-image"
-                style={{ width: "80px", height: "110px", margin: 0 }}
-                src={
-                  cards[
-                    `${game.playedCards.at(-1).suit}${
-                      game.playedCards.at(-1).rank
-                    }`
-                  ]
-                }
-              ></img>
-            </div>
-            <button
-              style={{
-                width: "100px",
-                height: "50px",
-                marginTop: "50px",
-                fontSize: "1rem",
-              }}
-              onClick={drawCard}
-            >
-              Draw ({game.cardsLeft})
-            </button>
-            <button
-              style={{
-                width: "100px",
-                height: "50px",
-                marginTop: "50px",
-                fontSize: "1rem",
-              }}
-              onClick={() => playTurn(passCard)}
-            >
-              Pass
-            </button>
-          </div>
-        </div>
-      )}
+        {/* If name is not set that means the players are not created on the server yet so show the input */}
+        {playerLoading === false && player.id === "" && (
+          <input
+            id="name"
+            style={{ marginRight: "4px" }}
+            value={player.name}
+            onKeyDown={(e) => handleInputKeyDown(e, btnAction.createPlayer)}
+            onChange={(i) =>
+              setPlayer((prevState) => ({
+                ...prevState,
+                name: i.target.value,
+              }))
+            }
+          />
+        )}
 
-      {/* CHANGE SUIT */}
-      {!!toggleChangeSuit && (
-        <div style={{ marginTop: "0.5rem", marginBottom: "0.2rem" }}>
-          <h3>Change Suit</h3>
-          <img
-            alt="Ace diamond"
-            onClick={() => changeSuit(suit.Diamonds)}
-            style={{ width: "70px", height: "100px", marginRight: "10px" }}
-            className="card-image"
-            src={cards[11]}
-          ></img>
-          <img
-            alt="Ace clubs"
-            onClick={() => changeSuit(suit.Clubs)}
-            style={{ width: "70px", height: "100px", marginRight: "10px" }}
-            className="card-image"
-            src={cards[21]}
-          ></img>
-          <img
-            alt="Ace hearts"
-            onClick={() => changeSuit(suit.Hearts)}
-            style={{ width: "70px", height: "100px", marginRight: "10px" }}
-            className="card-image"
-            src={cards[31]}
-          ></img>
-          <img
-            alt="Ace spades"
-            onClick={() => changeSuit(suit.Spades)}
-            style={{ width: "70px", height: "100px", marginRight: "10px" }}
-            className="card-image"
-            src={cards[41]}
-          ></img>
-        </div>
-      )}
+        {/* else the players have been created on the server so show the name and the set button */}
+        {playerLoading === false && player.id !== "" && (
+          <span style={{ marginRight: "4px" }}>{player.name}</span>
+        )}
 
-      {/* PLAYERS HANDS */}
-      {!!game?.playersData &&
-        !!Object.keys(game.playersData) &&
-        Object.entries(game.playersData).map((playerData) => {
-          return (
-            <div
-              key={playerData[playerDataHashIndex].player.id}
-              style={{ maxWidth: "800px" }}
-            >
-              {/* player name */}
-              <div>
-                {playerData[playerDataHashIndex].player.name} ( Score:{" "}
-                {playerData[playerDataHashIndex].score})
-              </div>
+        {playerLoading === true && <span>Loading...</span>}
 
-              {/* CURRENT player hand */}
-              {playerData[playerDataHashIndex].player.id === player?.id && (
-                <ul style={{ listStyleType: "none", padding: "0" }}>
-                  {playerData[playerDataHashIndex]?.hand.map((card) => (
-                    <li
-                      style={{ display: "inline-block", marginLeft: "10px" }}
-                      key={`${playerData[playerDataHashIndex].player.id}_${card.rank}_${card.suit}`}
-                    >
-                      <img
-                        alt="Players cards"
-                        onClick={() => playTurn(card)}
-                        className="card-image"
-                        src={cards[`${card.suit}${card.rank}`]}
-                      ></img>
-                    </li>
-                  ))}
-                </ul>
-              )}
+        {playerLoading === false && player.id === "" && (
+          <button onClick={createPlayer}>Set</button>
+        )}
 
-              {/* OTHER players hands */}
-              {playerData[playerDataHashIndex].player.id !== player?.id && (
-                <ul style={{ listStyleType: "none", padding: "0" }}>
-                  {Array.from({ length: playerData[1].cardsLeft }, (_, i) => (
-                    <li
-                      style={{ display: "inline-block", marginLeft: "10px" }}
-                      key={`${i}_oppoment_card`}
-                    >
-                      <img
-                        alt="Opponents cards"
-                        className="card-image"
-                        style={{ width: "80px", height: "110px" }}
-                        src={cards[1]}
-                      ></img>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
-
-      {!!game.id && (
-        <>
-          {/* GAME CHAT MESSAGES */}
-          <div style={{ maxWidth: "800px", marginBottom: "1rem" }}>
-            <div
-              style={{
-                height: "200px",
-                background: "#fff1ee",
-                overflow: "auto",
-                margin: "10px 0",
-              }}
-            >
-              <ul
-                style={{
-                  listStyleType: "none",
-                  margin: 0,
-                  padding: "20px 0 0 10px",
-                }}
-              >
-                {GameMessages.map((m) => (
-                  <li key={guid()}>{m}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* PLAYERES CHAT MESSAGES */}
-          <div style={{ maxWidth: "800px", marginBottom: "1rem" }}>
-            <div
-              style={{
-                height: "200px",
-                background: "#eeeeef",
-                overflow: "auto",
-                margin: "10px 0",
-              }}
-            >
-              <ul
-                style={{
-                  listStyleType: "none",
-                  margin: 0,
-                  padding: "20px 0 0 10px",
-                }}
-              >
-                {messages.map((m) => (
-                  <li key={guid()}>{m}</li>
-                ))}
-              </ul>
-            </div>
-            <div style={{ display: "flex", gap: "4px" }}>
+        {/* If server has created the player but the game is not yet created then show available actions join/create game */}
+        {player.id !== "" && game.id === "" && (
+          <>
+            <div style={{ marginTop: "1rem" }}>
+              <label htmlFor="joinGame">Join/Create: </label>
               <input
-                value={messageInputText}
-                style={{ width: "100%", height: "1.5rem" }}
-                placeholder="Enter message..."
-                onKeyDown={(e) =>
-                  handleInputKeyDown(e, btnAction.broadcastMessage)
-                }
-                onChange={(input) => {
-                  setMessageInputText(input.target.value);
-                }}
+                id="joinGame"
+                type="checkbox"
+                value={toggleJoinCreate}
+                onChange={() => setToggleJoinCreate((prev) => !prev)}
               />
+            </div>
+
+            {/* CREATE GAME */}
+            {!toggleJoinCreate && (
+              <>
+                {/* Loading */}
+                {gameLoading === true && <span>Loading...</span>}
+                {/* Display */}
+                {gameLoading === false && (
+                  <>
+                    <label htmlFor="noOfTurns">Numbers of Turns: </label>
+                    <select
+                      id="noOfTurns"
+                      onChange={(i) => setGameTurns(i.target.value)}
+                      defaultValue={defaultTurns}
+                    >
+                      {[1, 2, 3, 5, 10, 15, 20].map((no, index) => {
+                        return <option key={index}>{no}</option>;
+                      })}
+                    </select>
+                    <button style={{ marginLeft: "1rem" }} onClick={createGame}>
+                      Create Game
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* JOIN GAME */}
+            {toggleJoinCreate && (
+              <>
+                {/* Loading */}
+                {gameLoading === true && <span>Loading...</span>}
+                {/* Display */}
+                {gameLoading === false && (
+                  <>
+                    <input
+                      value={gameToJoin}
+                      style={{
+                        marginRight: "4px",
+                        minWidth: "270px",
+                        height: "1.3rem",
+                      }}
+                      onKeyDown={(e) =>
+                        handleInputKeyDown(e, btnAction.joinGame)
+                      }
+                      onChange={(input) => {
+                        setGameToJoin(input.target.value);
+                      }}
+                    />
+                    <button style={{ height: "1.6rem" }} onClick={joinGame}>
+                      Join Game
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {!!game.id && (
+          <div style={{ marginBottom: "1rem" }}>
+            Game: {game.id}{" "}
+            <button onClick={() => navigator.clipboard.writeText(game.id)}>
+              Copy
+            </button>
+          </div>
+        )}
+
+        {/* START GAME */}
+        {!!player?.id &&
+          !!game?.playersData &&
+          !!game?.id &&
+          game?.playersData[`${player?.id}`]?.isLeader && (
+            <div style={{ margin: "1rem 0" }}>
+              {game.currentTurn === 0 && (
+                <button
+                  disabled={Object.keys(game.playersData).length <= 1}
+                  onClick={startGame}
+                >
+                  Start Game
+                </button>
+              )}
+              {Object.keys(game.playersData).length <= 1 && (
+                <span style={{ color: "#aaa", marginLeft: "4px" }}>
+                  {" "}
+                  awaiting players to join...
+                </span>
+              )}
+            </div>
+          )}
+
+        {/* GAME STATISTICS AND ACTIONS */}
+        {!!game.playedCards && game.playedCards.length > 0 && (
+          <div>
+            <div style={{ marginBottom: "1rem" }}>
+              {/* Turns and Time */}
+              <div>
+                Turn: {game.currentTurn} of {game.turnLimit}
+                {countdown > 0 && isCountdownActive && (
+                  <>
+                    ( Time:{" "}
+                    <span
+                      style={{
+                        color: `${countdown <= 10 ? "red" : "green"}`,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {countdown}
+                    </span>
+                    )
+                  </>
+                )}
+              </div>
+              {/* Current player */}
+              <div>
+                CurrentPlayer:{" "}
+                <span style={{ color: "blue" }}>
+                  {
+                    game?.playersData[
+                      Object.keys(game?.playersData).find(
+                        (key) => game?.playersData[key]?.isHisTurn === true
+                      )
+                    ]?.player?.name
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "1.5rem", marginLeft: "10px" }}>
+              <div style={{ width: "max-content", marginBottom: "1rem" }}>
+                <div style={{ textAlign: "center" }}>At Table</div>
+                <img
+                  alt="Current card on table"
+                  className="card-image"
+                  style={{ width: "80px", height: "110px", margin: 0 }}
+                  src={
+                    cards[
+                      `${game.playedCards.at(-1).suit}${
+                        game.playedCards.at(-1).rank
+                      }`
+                    ]
+                  }
+                ></img>
+              </div>
               <button
-                style={{ height: "1.8rem", width: "4rem" }}
-                disabled={isMessageButtonDisabled}
-                onClick={broadcastMessage}
-                type="primary"
+                style={{
+                  width: "100px",
+                  height: "50px",
+                  marginTop: "50px",
+                  fontSize: "1rem",
+                }}
+                onClick={drawCard}
               >
-                Send
+                Draw ({game.cardsLeft})
+              </button>
+              <button
+                style={{
+                  width: "100px",
+                  height: "50px",
+                  marginTop: "50px",
+                  fontSize: "1rem",
+                }}
+                onClick={() => playTurn(passCard)}
+              >
+                Pass
               </button>
             </div>
           </div>
-        </>
-      )}
+        )}
+
+        {/* CHANGE SUIT */}
+        {!!toggleChangeSuit && (
+          <div style={{ marginTop: "0.5rem", marginBottom: "0.2rem" }}>
+            <h3>Change Suit</h3>
+            <img
+              alt="Ace diamond"
+              onClick={() => changeSuit(suit.Diamonds)}
+              style={{ width: "70px", height: "100px", marginRight: "10px" }}
+              className="card-image"
+              src={cards[11]}
+            ></img>
+            <img
+              alt="Ace clubs"
+              onClick={() => changeSuit(suit.Clubs)}
+              style={{ width: "70px", height: "100px", marginRight: "10px" }}
+              className="card-image"
+              src={cards[21]}
+            ></img>
+            <img
+              alt="Ace hearts"
+              onClick={() => changeSuit(suit.Hearts)}
+              style={{ width: "70px", height: "100px", marginRight: "10px" }}
+              className="card-image"
+              src={cards[31]}
+            ></img>
+            <img
+              alt="Ace spades"
+              onClick={() => changeSuit(suit.Spades)}
+              style={{ width: "70px", height: "100px", marginRight: "10px" }}
+              className="card-image"
+              src={cards[41]}
+            ></img>
+          </div>
+        )}
+
+        {/* PLAYERS HANDS */}
+        {!!game?.playersData &&
+          !!Object.keys(game.playersData) &&
+          Object.entries(game.playersData).map((playerData) => {
+            return (
+              <div
+                key={playerData[playerDataHashIndex].player.id}
+                style={{ maxWidth: "800px" }}
+              >
+                {/* player name */}
+                <div>
+                  {playerData[playerDataHashIndex].player.name} ( Score:{" "}
+                  {playerData[playerDataHashIndex].score})
+                </div>
+
+                {/* CURRENT player hand */}
+                {playerData[playerDataHashIndex].player.id === player?.id && (
+                  <ul style={{ listStyleType: "none", padding: "0" }}>
+                    {playerData[playerDataHashIndex]?.hand.map((card) => (
+                      <li
+                        style={{ display: "inline-block", marginLeft: "10px" }}
+                        key={`${playerData[playerDataHashIndex].player.id}_${card.rank}_${card.suit}`}
+                      >
+                        <img
+                          alt="Players cards"
+                          onClick={() => playTurn(card)}
+                          className="card-image"
+                          src={cards[`${card.suit}${card.rank}`]}
+                        ></img>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* OTHER players hands */}
+                {playerData[playerDataHashIndex].player.id !== player?.id && (
+                  <ul style={{ listStyleType: "none", padding: "0" }}>
+                    {Array.from({ length: playerData[1].cardsLeft }, (_, i) => (
+                      <li
+                        style={{ display: "inline-block", marginLeft: "10px" }}
+                        key={`${i}_oppoment_card`}
+                      >
+                        <img
+                          alt="Opponents cards"
+                          className="card-image"
+                          style={{ width: "80px", height: "110px" }}
+                          src={cards[1]}
+                        ></img>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+
+        {!!game.id && (
+          <>
+            {/* GAME CHAT MESSAGES */}
+            <div style={{ maxWidth: "800px", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  height: "200px",
+                  background: "#fff1ee",
+                  overflow: "auto",
+                  margin: "10px 0",
+                }}
+              >
+                <ul
+                  style={{
+                    listStyleType: "none",
+                    margin: 0,
+                    padding: "20px 0 0 10px",
+                  }}
+                >
+                  {GameMessages.map((m) => (
+                    <li key={guid()}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* PLAYERES CHAT MESSAGES */}
+            <div style={{ maxWidth: "800px", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  height: "200px",
+                  background: "#eeeeef",
+                  overflow: "auto",
+                  margin: "10px 0",
+                }}
+              >
+                <ul
+                  style={{
+                    listStyleType: "none",
+                    margin: 0,
+                    padding: "20px 0 0 10px",
+                  }}
+                >
+                  {messages.map((m) => (
+                    <li key={guid()}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+              <div style={{ display: "flex", gap: "4px" }}>
+                <input
+                  value={messageInputText}
+                  style={{ width: "100%", height: "1.5rem" }}
+                  placeholder="Enter message..."
+                  onKeyDown={(e) =>
+                    handleInputKeyDown(e, btnAction.broadcastMessage)
+                  }
+                  onChange={(input) => {
+                    setMessageInputText(input.target.value);
+                  }}
+                />
+                <button
+                  style={{ height: "1.8rem", width: "4rem" }}
+                  disabled={isMessageButtonDisabled}
+                  onClick={broadcastMessage}
+                  type="primary"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      <footer style={{ height: 30, borderTop: "2px solid #eee" }}>
+        <div style={{ fontSize: 12, margin: "6px 1rem" }}>
+          Created by{" "}
+          <a
+            target="_blank"
+            href="https://gr.linkedin.com/in/panagiotis-mitropanos-66b479219"
+            rel="noreferrer"
+          >
+            Panagiotis Mitropanos
+          </a>
+          {" - "}
+          {new Date().getFullYear()}
+        </div>
+      </footer>
     </div>
   );
 }
