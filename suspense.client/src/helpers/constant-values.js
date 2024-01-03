@@ -56,7 +56,11 @@ const DEBUGGING = false;
 const countdownSec = 60;
 
 const apiVersion = "/api/v1";
-const serverBaseUri = process.env.REACT_APP_SERVER_BASE_URI || "http://localhost:5114";
+
+const serverBaseUri =
+  process.env.REACT_APP_ENV === "production"
+    ? window.location.origin
+    : "http://localhost:5114";
 
 const defaultTurns = 1;
 const playerDataHashIndex = 1;

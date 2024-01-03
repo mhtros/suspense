@@ -13,7 +13,17 @@ To run the application using Docker, follow these steps:
    docker compose -f compose-production.yaml up --build
    ```
 
-The application will be available at [http://localhost:5114](http://localhost:5114).
+The application will be available at [http://localhost:80](http://localhost:80).
+
+**Note**: If you want to use a different port than the default `80`, you can achieve that by changing the host port
+binding on the reverse proxy container in the compose-production.yaml file:
+
+```yaml
+  reverse-proxy:
+    image: nginx:1.25.3
+    ports:
+      - ADD_YOUR_PREFERRED_PORT:80
+```
 
 **Note:** The production `compose.yaml` file contains a password setting for the Redis cache. Modify this password based
 on your specific needs or preferences.

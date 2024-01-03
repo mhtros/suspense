@@ -36,8 +36,8 @@ RUN npm install
 # Copy the entire project to the work directory
 COPY suspense.client/ .
 
-ARG REACT_APP_SERVER_BASE_URI
-ENV REACT_APP_SERVER_BASE_URI=$REACT_APP_SERVER_BASE_URI
+ARG REACT_APP_ENV
+ENV REACT_APP_ENV=$REACT_APP_ENV
 
 # Build the React application
 RUN npm run build

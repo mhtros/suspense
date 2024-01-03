@@ -43,22 +43,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapHub<GameHub>("/hubs/game");
-
 app.UseHttpsRedirection();
-
 app.MapControllers();
 
-app.UseAuthorization();
-
-app.UseDefaultFiles();
-
 if (app.Environment.IsProduction())
+{
+    app.UseDefaultFiles();
     app.UseStaticFiles();
+}
 else
+{
     app.UseCors(x => x
         .WithOrigins("http://localhost:3000")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials());
+}
 
 app.Run();
