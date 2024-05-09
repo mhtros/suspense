@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using Suspense.Server.Entities;
-using Suspense.Server.Exceptions;
 using Suspense.Server.Hubs;
 using Suspense.Server.Models;
 using Suspense.Server.Repository;
@@ -56,7 +55,7 @@ public class GameManager : IGameManager
 
         var isValidPass = playerData.HasDraw && move is { Rank: Card.RankType.Pass, Suit: Card.SuitType.Pass };
         var isIncompatible = move.Rank != lastPlayedCard.Rank && move.Rank != Card.RankType.Ace;
-        
+
         if (lastPlayedCard.Rank == Card.RankType.Ace)
             isIncompatible = isIncompatible && move.Suit != _game.SuitModificator;
         else
@@ -69,26 +68,30 @@ public class GameManager : IGameManager
     public async Task JoinGameAsync(string playerId, bool isLeader, string connectionId)
     {
         var player = await _playerRepository.GetPlayerAsync(playerId);
-        player.ConnectionId = connectionId; // Store current Hub session
 
         if (_game.PlayersData.Count >= GamePlayerCapacity)
-            throw new GameException(
+            throw new HubException(
                 $"Game {_game.Id} has reach its Max Capacity of {GamePlayerCapacity} Players. Try to create a new game or join another!"
             );
 
         if (isLeader && _game.PlayersData.Values.Any(pd => pd.IsLeader))
-            throw new PlayerException($"There is already a leader for the game: {_game.Id}.");
+            throw new HubException($"There is already a leader for the game: {_game.Id}.");
 
         // The player already exists on the game no need to proceed further
         if (_game.PlayersData.Values.Any(pd => pd.Player.Id == player.Id)) return;
 
         AddPlayer(player, isLeader);
 
-        // If the player has successfully joined the game then update him to save the session ConnectionId
-        await _playerRepository.UpdatePlayerAsync(player);
-        await SaveGameStateAsync();
+        // If the player has successfully joined the game and is not a bot
+        // then update him to save the session ConnectionId and add it to SignalR
+        if (player.IsBot == false)
+        {
+            player.ConnectionId = connectionId; // Store current Hub session
+            await _playerRepository.UpdatePlayerAsync(player);
+            await _hubContext.Groups.AddToGroupAsync(player.ConnectionId, _game.Id);
+        }
 
-        await _hubContext.Groups.AddToGroupAsync(player.ConnectionId, _game.Id);
+        await SaveGameStateAsync();
 
         await _hubContext.Clients.Group(_game.Id).PlayerJoined(player.Name);
         await _hubContext.Clients.Group(_game.Id).GameUpdated(_game);
@@ -210,7 +213,7 @@ public class GameManager : IGameManager
                     {
                         var answeredMove = counteractMove;
 
-                        // if the player already has play his move then prevent him to throw another card
+                        // if the player already has played his move then prevent him to throw another card
                         if (answeredMove == null)
                         {
                             // Initialize only if the player has not yet play his move

@@ -21,6 +21,7 @@ const btnAction = {
   createGame: 2,
   joinGame: 3,
   broadcastMessage: 4,
+  createBotPlayer: 5,
 };
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
 
   const [player, setPlayer] = useState(defaultPlayer);
   const [playerLoading, setPlayerLoading] = useState(false);
+  const [playerBotLoading, setPlayerBotLoading] = useState(false);
 
   const [game, setGame] = useState(defaultGame);
   const [gameLoading, setGameLoading] = useState(false);
@@ -204,6 +206,27 @@ function App() {
     setPlayer(response);
   };
 
+  const createBotPlayer = async () => {
+    if (!connection) return;
+
+    const requestInfo = {
+      url: `${serverBaseUri}${apiVersion}/Player/new?Name=bot&isBot=true`,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    };
+
+    try {
+      setPlayerBotLoading(true);
+      const response = await customFetch(requestInfo);
+      const isLeader = false;
+      await connection.invoke("JoinGame", game.id, response.id, isLeader);
+    } catch (errorObj) {
+      handleError(errorObj);
+    } finally {
+      setPlayerBotLoading(false);
+    }
+  };
+
   const createGame = async () => {
     const requestInfo = {
       url: `${serverBaseUri}${apiVersion}/Game/new`,
@@ -272,6 +295,7 @@ function App() {
     if (action === btnAction.createGame) await createGame();
     if (action === btnAction.joinGame) await joinGame();
     if (action === btnAction.broadcastMessage) await broadcastMessage();
+    if (action === btnAction.createBotPlayer) await createBotPlayer();
   };
 
   // === JSX ===
@@ -431,15 +455,20 @@ function App() {
         {!!player?.id &&
           !!game?.playersData &&
           !!game?.id &&
-          game?.playersData[`${player?.id}`]?.isLeader && (
+          game?.playersData[`${player?.id}`]?.isLeader &&
+          !playerBotLoading && (
             <div style={{ margin: "1rem 0" }}>
               {game.currentTurn === 0 && (
-                <button
-                  disabled={Object.keys(game.playersData).length <= 1}
-                  onClick={startGame}
-                >
-                  Start Game
-                </button>
+                <>
+                  <button onClick={createBotPlayer}>Create BOT</button>
+                  <button
+                    style={{ marginLeft: "1rem" }}
+                    disabled={Object.keys(game.playersData).length <= 1}
+                    onClick={startGame}
+                  >
+                    Start Game
+                  </button>
+                </>
               )}
               {Object.keys(game.playersData).length <= 1 && (
                 <span style={{ color: "#aaa", marginLeft: "4px" }}>
@@ -448,6 +477,15 @@ function App() {
                 </span>
               )}
             </div>
+          )}
+
+        {/* Loading for START GAME or CREATE BOT */}
+        {!!player?.id &&
+          !!game?.playersData &&
+          !!game?.id &&
+          game?.playersData[`${player?.id}`]?.isLeader &&
+          !!playerBotLoading && (
+            <div style={{ margin: "1rem 0" }}>Loading...</div>
           )}
 
         {/* GAME STATISTICS AND ACTIONS */}

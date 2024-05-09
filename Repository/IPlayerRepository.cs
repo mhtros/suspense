@@ -13,8 +13,9 @@ public interface IPlayerRepository
     /// and 15 minute sliding expiration time.
     /// </summary>
     /// <param name="name">The name of the player to create.</param>
+    /// <param name="isBot">If the player will be a bot.</param>
     /// <returns>A task representing the asynchronous operation. The task result contains the newly created player.</returns>
-    public Task<Player> CreatePlayerAsync(string name);
+    public Task<Player> CreatePlayerAsync(string name, bool isBot = false);
 
     /// <summary>
     /// Retrieves a player with the specified ID asynchronously.

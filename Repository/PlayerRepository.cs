@@ -21,9 +21,14 @@ public class PlayerRepository : IPlayerRepository
     }
 
     /// <inheritdoc />
-    public async Task<Player> CreatePlayerAsync(string name)
+    public async Task<Player> CreatePlayerAsync(string name, bool isBot = false)
     {
-        var player = new Player(name, Guid.NewGuid());
+        var playerGuid = Guid.NewGuid();
+
+        if (isBot)
+            name = $"Bot_{playerGuid.ToString("N").Substring(0, 5)}";
+
+        var player = new Player(name, playerGuid, isBot);
         await _cache.SetModelAsync(player.Id, player, _expirationTime, _slidingExpirationTime);
         return player;
     }
