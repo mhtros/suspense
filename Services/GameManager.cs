@@ -404,6 +404,7 @@ public class GameManager : IGameManager
     {
         // Notify each player separately to keep their hand secret from the other players  
         var tasks = _game.PlayersData.Values
+            .Where(pd => pd.Player.IsBot == false)
             .Select(playerData => _hubContext.Clients.Client(playerData.Player.ConnectionId!)
                 .PlayerDataUpdated(playerData)
             );
