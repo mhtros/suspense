@@ -177,9 +177,7 @@ public class GameManager : IGameManager
 
                                 if (isMoveValid == false)
                                 {
-                                    // Invalidate the answer0
-                                    counteractMove.Rank = Card.RankType.Invalid;
-                                    counteractMove.Suit = Card.SuitType.Invalid;
+                                    counteractMove.Invalidate();
 
                                     emptyHandPlayer =
                                         await EndPlayerTurnAsync(_game.PlayersData[currentId], counteractMove);
@@ -227,9 +225,7 @@ public class GameManager : IGameManager
 
                         if (isMoveValid == false)
                         {
-                            // Invalidate the answer
-                            answeredMove.Rank = Card.RankType.Invalid;
-                            answeredMove.Suit = Card.SuitType.Invalid;
+                            answeredMove.Invalidate();
 
                             emptyHandPlayer = await EndPlayerTurnAsync(_game.PlayersData[currentId], answeredMove);
                             continue; // End player turn

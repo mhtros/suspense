@@ -105,4 +105,27 @@ public class Card
     /// Represents the suit of a playing card in a standard deck.
     /// </summary>
     public SuitType Suit { get; set; }
+
+    /// <summary>
+    ///  Sets both <see cref="Rank"/>, <see cref="Suit"/>
+    /// to <see cref="RankType.Invalid"/>, <see cref="SuitType.Invalid"/> respectively.
+    /// </summary>
+    public void Invalidate()
+    {
+        Rank = RankType.Invalid;
+        Suit = SuitType.Invalid;
+    }
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Card card) return false;
+        return Rank == card.Rank && Suit == card.Suit;
+    }
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Rank, Suit);
+    }
 }
