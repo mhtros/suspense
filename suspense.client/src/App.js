@@ -678,7 +678,18 @@ function App() {
                   }}
                 >
                   {GameMessages.map((m) => (
-                    <li key={guid()}>{m}</li>
+                    <li
+                      style={{
+                        color: m.includes("Game: The Suit has been change to")
+                          ? "red"
+                          : m.includes("Game: Game Over. The winner is")
+                          ? "green"
+                          : "black",
+                      }}
+                      key={guid()}
+                    >
+                      {m}
+                    </li>
                   ))}
                 </ul>
               </div>
