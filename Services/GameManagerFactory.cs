@@ -37,6 +37,7 @@ public class GameManagerFactory : IGameManagerFactory
         var gameRepository = _serviceProvider.GetRequiredService<IGameRepository>();
         var playerRepository = _serviceProvider.GetRequiredService<IPlayerRepository>();
         var hubContext = _serviceProvider.GetRequiredService<IHubContext<GameHub, IGameClientActions>>();
-        return new GameManager(game, gameRepository, playerRepository, hubContext);
+        var botMoveCalculator = _serviceProvider.GetRequiredService<IBotMoveCalculator>();
+        return new GameManager(game, gameRepository, playerRepository, hubContext, botMoveCalculator);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
+using Suspense.Server.Contracts;
 using Suspense.Server.Entities;
 using Suspense.Server.Hubs;
 using Suspense.Server.Models;
@@ -18,17 +19,19 @@ public class GameManager : IGameManager
     private readonly IGameRepository _gameRepository;
     private readonly IPlayerRepository _playerRepository;
     private readonly IHubContext<GameHub, IGameClientActions> _hubContext;
+    private readonly IBotMoveCalculator _moveCalculator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameManager"/> class.
     /// </summary>
     public GameManager(GameState game, IGameRepository gameRepository, IPlayerRepository playerRepository,
-        IHubContext<GameHub, IGameClientActions> hubContext)
+        IHubContext<GameHub, IGameClientActions> hubContext, IBotMoveCalculator moveCalculator)
     {
         _game = game ?? throw new ArgumentNullException(nameof(game));
         _gameRepository = gameRepository;
         _playerRepository = playerRepository;
         _hubContext = hubContext;
+        _moveCalculator = moveCalculator;
     }
 
     /// <inheritdoc />
@@ -146,7 +149,7 @@ public class GameManager : IGameManager
                         continue; // End player turn
                     }
 
-                    Card? counteractMove = null;
+                    Card? counterMove = null;
 
                     // Check if the player has to draw penalty cards due to a previous 7 card
                     if (_game.PlayersData[currentId].PenaltyCardsCount > 0)
@@ -161,30 +164,45 @@ public class GameManager : IGameManager
                         }
                         else
                         {
-                            // Lucky! you have the opportunity to counterattack
-                            var cts = new CancellationTokenSource();
-                            cts.CancelAfter(TimeSpan.FromSeconds(CountdownDuration + BufferDuration));
-
-                            await GamePrivateAnnouncementAsync(_game.PlayersData[currentId].Player.ConnectionId!,
-                                $"You have the option to play a seven card to transfer the penalty ({_game.PlayersData[currentId].PenaltyCardsCount} cards) to the next player.");
-
                             try
                             {
-                                counteractMove = await GetPlayerMove(_game.PlayersData[currentId].Player.ConnectionId!,
-                                    cts.Token);
+                                if (_game.PlayersData[currentId].Player.IsBot)
+                                {
+                                    var is1Vs1 = _game.PlayersData.Count == 2;
 
-                                var isMoveValid = ValidateMove(_game.PlayersData[currentId].Player.Id, counteractMove);
+                                    var botResponse = await _moveCalculator.CalculateMoveAsync(
+                                        _game.PlayersData[currentId],
+                                        _game.PlayedCards, _game.PlayersData[nextId].CardsLeft, is1Vs1,
+                                        _game.SuitModificator, DrawCardAsync);
+
+                                    counterMove = botResponse.Move;
+                                }
+                                else
+                                {
+                                    // Lucky! you have the opportunity to counterattack
+                                    var cts = new CancellationTokenSource();
+                                    cts.CancelAfter(TimeSpan.FromSeconds(CountdownDuration + BufferDuration));
+
+                                    await GamePrivateAnnouncementAsync(
+                                        _game.PlayersData[currentId].Player.ConnectionId!,
+                                        $"You have the option to play a seven card to transfer the penalty ({_game.PlayersData[currentId].PenaltyCardsCount} cards) to the next player.");
+
+                                    counterMove = await GetPlayerMove(
+                                        _game.PlayersData[currentId].Player.ConnectionId!, cts.Token);
+                                }
+
+                                var isMoveValid = ValidateMove(_game.PlayersData[currentId].Player.Id, counterMove);
 
                                 if (isMoveValid == false)
                                 {
-                                    counteractMove.Invalidate();
+                                    counterMove.Invalidate();
 
                                     emptyHandPlayer =
-                                        await EndPlayerTurnAsync(_game.PlayersData[currentId], counteractMove);
+                                        await EndPlayerTurnAsync(_game.PlayersData[currentId], counterMove);
                                     continue; // End player turn
                                 }
 
-                                if (isMoveValid && counteractMove.Rank == Card.RankType.Seven)
+                                if (isMoveValid && counterMove.Rank == Card.RankType.Seven)
                                 {
                                     // Pass the penalty to the next player and increase it by 2
                                     _game.PlayersData[nextId].PenaltyCardsCount =
@@ -193,7 +211,7 @@ public class GameManager : IGameManager
                                     _game.PlayersData[currentId].PenaltyCardsCount = 0;
 
                                     emptyHandPlayer =
-                                        await EndPlayerTurnAsync(_game.PlayersData[currentId], counteractMove);
+                                        await EndPlayerTurnAsync(_game.PlayersData[currentId], counterMove);
                                     continue; // End player turn
                                 }
                             }
@@ -209,16 +227,30 @@ public class GameManager : IGameManager
 
                     try
                     {
-                        var answeredMove = counteractMove;
+                        var answeredMove = counterMove;
+                        BotMoveCalculatorResponse? botResponse = null;
 
                         // if the player already has played his move then prevent him to throw another card
                         if (answeredMove == null)
                         {
-                            // Initialize only if the player has not yet play his move
-                            var answerCts = new CancellationTokenSource();
-                            answerCts.CancelAfter(TimeSpan.FromSeconds(CountdownDuration + BufferDuration));
-                            answeredMove = await GetPlayerMove(_game.PlayersData[currentId].Player.ConnectionId!,
-                                answerCts.Token);
+                            if (_game.PlayersData[currentId].Player.IsBot)
+                            {
+                                var is1Vs1 = _game.PlayersData.Count == 2;
+
+                                botResponse = await _moveCalculator.CalculateMoveAsync(_game.PlayersData[currentId],
+                                    _game.PlayedCards, _game.PlayersData[nextId].CardsLeft, is1Vs1,
+                                    _game.SuitModificator, DrawCardAsync);
+
+                                answeredMove = botResponse.Move;
+                            }
+                            else
+                            {
+                                // Initialize only if the player has not yet play his move
+                                var answerCts = new CancellationTokenSource();
+                                answerCts.CancelAfter(TimeSpan.FromSeconds(CountdownDuration + BufferDuration));
+                                answeredMove = await GetPlayerMove(_game.PlayersData[currentId].Player.ConnectionId!,
+                                    answerCts.Token);
+                            }
                         }
 
                         var isMoveValid = ValidateMove(_game.PlayersData[currentId].Player.Id, answeredMove);
@@ -271,9 +303,19 @@ public class GameManager : IGameManager
                         {
                             try
                             {
-                                var cts = new CancellationTokenSource();
-                                var suit = await _hubContext.Clients
-                                    .Client(_game.PlayersData[currentId].Player.ConnectionId!).ChangeSuit(cts.Token);
+                                Card.SuitType suit;
+
+                                if (_game.PlayersData[currentId].Player.IsBot)
+                                {
+                                    suit = botResponse!.SuitModificator ?? answeredMove.Suit;
+                                }
+                                else
+                                {
+                                    var cts = new CancellationTokenSource();
+                                    suit = await _hubContext.Clients
+                                        .Client(_game.PlayersData[currentId].Player.ConnectionId!)
+                                        .ChangeSuit(cts.Token);
+                                }
 
                                 var validSuits = new List<int>
                                 {

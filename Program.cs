@@ -23,6 +23,7 @@ builder.Services.AddSignalR(
 builder.Services.AddTransient<IGameRepository, GameRepository>();
 builder.Services.AddTransient<IPlayerRepository, PlayerRepository>();
 builder.Services.AddSingleton<IGameManagerFactory, GameManagerFactory>();
+builder.Services.AddSingleton<IBotMoveCalculator, BotMoveCalculator>();
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
