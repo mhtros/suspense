@@ -574,14 +574,7 @@ public class GameManager : IGameManager
     {
         if (_game.Deck.Count < numberOfCards)
         {
-            // Take all except the last played card
-            var cardsToBeReused = _game.PlayedCards.Take(_game.PlayedCards.Count - 1);
-
-            // Remove the taken cards from the played list
-            _game.PlayedCards.RemoveRange(0, _game.PlayedCards.Count - 1);
-
-            // Add them back to deck
-            _game.Deck.AddRange(cardsToBeReused);
+            RepopulateDeck();
 
             if (_game.Deck.Count < numberOfCards)
             {
@@ -589,12 +582,27 @@ public class GameManager : IGameManager
                 // return only the cards contained in the deck
                 numberOfCards = _game.Deck.Count;
             }
-
-            ShuffleDeck();
         }
 
         var cards = _game.Deck.GetRange(0, numberOfCards);
         _game.Deck.RemoveRange(0, numberOfCards);
+
+        if (_game.Deck.Count == 0) RepopulateDeck();
+
         return cards;
+    }
+
+    private void RepopulateDeck()
+    {
+        // Take all except the last played card
+        var cardsToBeReused = _game.PlayedCards.Take(_game.PlayedCards.Count - 1).ToArray();
+
+        // Remove the taken cards from the played list
+        _game.PlayedCards.RemoveRange(0, _game.PlayedCards.Count - 1);
+
+        // Add them back to deck
+        _game.Deck.AddRange(cardsToBeReused);
+
+        ShuffleDeck();
     }
 }
